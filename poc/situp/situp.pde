@@ -18,17 +18,16 @@ int alarmTimer,
 
 // Button things
 int dL = 10;
-int bW = (w/3)-dL;
+int bW = (w/2)-dL;
 int bH = 30;
 int bX = dL;
 int bY = h-bH-dL;
 
 int alarm = 0;
 color[] alarmCols = {#339900,#339900,#EEC73E,#EEC73E,#FB8B00,#FB8B00,#FD3301,#FD3301};
-boolean active;
+boolean active = true;
 
-Button distButton;
-Button htButton;
+Button setButton;
 Button pauseButton;
 
 void setup() {
@@ -39,31 +38,29 @@ void setup() {
 
   video.start();
 
-  distButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Set Distance");
-  bX = bX+bW+(dL/2);
-  htButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Set Height");
+  setButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Set Posture");
   bX = bX+bW+(dL/2);
   pauseButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Pause Tracking");
 }
 
 void draw() {
   getPosition();
+  setAlarm();
 
-  distButton.display();
-  htButton.display();
+  setButton.display();
   pauseButton.display();
 
-  if(distButton.pressed) {
-    limY = setY+3;
-  }
-  if(htButton.pressed) {
+  if(setButton.pressed) {
     limH = setH+3;
+    limY = setY+3;
   }
   if(pauseButton.pressed) {
     if (active) {
       active = false;
+      pauseButton.txB = "Resume Tracking";
     } else {
       active = true;
+      pauseButton.txB = "Pause Tracking";
     }
   }
 }
