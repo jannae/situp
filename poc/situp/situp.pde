@@ -10,11 +10,10 @@ OpenCV opencv;
 int w  = 640;
 int h  = 480;
 
-int alarmTimer,
-    setY,
-    limY,
-    setH,
-    limH;
+int setY;     // Y position (you are here)
+int setH;     // Distance from screen (you are here)
+int limY = 0; // Y position limit from calibration
+int limH = 0; // Distance limit from calibration
 
 // Button things
 int dL = 10;
@@ -23,9 +22,10 @@ int bH = 30;
 int bX = dL;
 int bY = h-bH-dL;
 
-int alarm = 0;
-color[] alarmCols = {#339900,#339900,#EEC73E,#EEC73E,#FB8B00,#FB8B00,#FD3301,#FD3301};
+color[] alarmCols = {#C8C8C8, #B4E123,#B4E123,#FFF028,#FFF028,#FFBE32,#FFBE32,#FF8A8A,#FF8A8A};
+boolean alarm = false;
 boolean active = true;
+int alarmTimer;
 
 Button setButton;
 Button pauseButton;
@@ -51,8 +51,9 @@ void draw() {
   pauseButton.display();
 
   if(setButton.pressed) {
-    limH = setH+3;
-    limY = setY+3;
+    limH = setH+10;
+    delay(150);
+    limY = setY+10;
   }
   if(pauseButton.pressed) {
     if (active) {
@@ -78,8 +79,18 @@ void getPosition() {
 
     noFill();
 
-    if (alarm > 0) stroke(255, 0, 0); //draw all lines red if alarm is active
-    else stroke(0, 255, 0);
+    if (alarm) {
+      // We will increment the color alert after 2 seconds 8 times
+      int secs = 1500;
+      for (int i = 2; i < alarmCols.length; i++){
+        if( millis() - alarmTimer >= secs){
+          stroke(alarmCols[i]);
+        }
+        secs = secs+2000;
+      }
+    } else {
+      stroke(alarmCols[0]);
+    }
     strokeWeight(2);
 
     Rectangle[] faces = opencv.detect();
@@ -87,7 +98,6 @@ void getPosition() {
     dist = 0;
 
     for (int i = 0; i < faces.length; i++) {
-
       setH  = faces[i].height;
       setY  = faces[i].y;
 
@@ -97,7 +107,7 @@ void getPosition() {
       // println(faces[i].x + "," + setY);
       rect(faces[i].x, setY, faces[i].width, setH);
 
-      // If we set a limit, draw another box with the limit distance
+      // If limit is set, draw another box with the limit distance
       if (limH != 0) {
         rect(faces[i].x-delta/2, setY-delta/2, faces[i].width+delta, limH);
       }
@@ -109,41 +119,29 @@ void getPosition() {
   popMatrix();
 }
 
-int setAlarm() {
+void setAlarm() {
   //checking for initialization of limits, and that were actively limiting
   if (limY != 0 && limH != 0 && active) {
     if (setH > limH || setY > limY) { //compare values to limits
-      for(int i=0; i*5 <= limH; i++) {
-        alarm = i;
-      }
+      alarm = true;
     }
     else {
-      alarm = 0;
+      alarm = false;
     }
   }
 
   //reset alarm timer if alarm is off
-  if (alarm == 0) {
+  if (alarm == false) {
     alarmTimer = millis() + 2000;
   } else if (millis() > alarmTimer) {
-    //check if alarm timer has expired
-
+    //check for 2 more seconds if alarm timer has expired
     if (millis()-2000 < alarmTimer) {
-      //do this for additional 2 seconds
-      Toolkit.getDefaultToolkit().beep(); //call the windows alarm sound
+      // make a noise
+      Toolkit.getDefaultToolkit().beep();
       delay(150);
     }
   }
-  if (alarm>0) println(alarm);
-  return alarm;
-}
-
-int getAlarm(int ht, int dis, int lht, int ldis, boolean act) {
-  // checking for initialization of limits
-  if (ht != 0 && dis != 0 && act) {
-
-  }
-  return alarm;
+  // if (alarm) println(alarm);
 }
 
 void captureEvent(Capture c) {
