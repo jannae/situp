@@ -10,8 +10,7 @@ OpenCV opencv;
 int w  = 640;
 int h  = 480;
 
-int alarm,
-    alarmTimer,
+int alarmTimer,
     setY,
     limY,
     setH,
@@ -19,11 +18,13 @@ int alarm,
 
 // Button things
 int dL = 10;
-int bW = (w/3)-10;
+int bW = (w/3)-dL;
 int bH = 30;
-int bX = 10;
+int bX = dL;
 int bY = h-bH-dL;
 
+int alarm = 0;
+color[] alarmCols = {#339900,#339900,#EEC73E,#EEC73E,#FB8B00,#FB8B00,#FD3301,#FD3301};
 boolean active;
 
 Button distButton;
@@ -32,8 +33,8 @@ Button pauseButton;
 
 void setup() {
   size(w, h);
-  video = new Capture(this, 640/2, 480/2);
-  opencv = new OpenCV(this, 640/2, 480/2);
+  video = new Capture(this, w/2, h/2);
+  opencv = new OpenCV(this, w/2, h/2);
   opencv.loadCascade(OpenCV.CASCADE_FRONTALFACE);
 
   video.start();
@@ -46,35 +47,41 @@ void setup() {
 }
 
 void draw() {
-  getPosition(0);
+  getPosition();
 
   distButton.display();
   htButton.display();
   pauseButton.display();
 
   if(distButton.pressed) {
-    println("yay");
+    limY = setY+3;
   }
-
+  if(htButton.pressed) {
+    limH = setH+3;
+  }
+  if(pauseButton.pressed) {
+    if (active) {
+      active = false;
+    } else {
+      active = true;
+    }
+  }
 }
 
-void getPosition(int interval) {
+void getPosition() {
   int dist,
       delta;
 
-  // Run all the openCV things here
-  //
-  // push/pop matrix protects the calibration buttons
-  //
+  // push/pop matrix protects the buttons
   pushMatrix();
-    scale(2); // scales the video to the window size
+    // openCV video rendering
+    scale(2);
     opencv.loadImage(video);
-
-    image(video, 0, 0); // this draws the webcam image
+    image(video, 0, 0);
 
     noFill();
 
-    if (alarm > 5) stroke(255, 0, 0); //draw all lines red if alarm is active
+    if (alarm > 0) stroke(255, 0, 0); //draw all lines red if alarm is active
     else stroke(0, 255, 0);
     strokeWeight(2);
 
@@ -86,28 +93,59 @@ void getPosition(int interval) {
 
       setH  = faces[i].height;
       setY  = faces[i].y;
+
+      // how far are we from the height limit
       delta = limH - setH;
 
       // println(faces[i].x + "," + setY);
-
       rect(faces[i].x, setY, faces[i].width, setH);
 
-      //the following line draws a second box with the limit distance
-      if (limH!=0) {
+      // If we set a limit, draw another box with the limit distance
+      if (limH != 0) {
         rect(faces[i].x-delta/2, setY-delta/2, faces[i].width+delta, limH);
       }
     }
-    //This draws a line at the limit height:
+
+    //Draw a line at the limit height:
     if (limH != 0) line(0, limH, width, limH);
+
   popMatrix();
 }
 
-int setAlarm(int ht, int dis, boolean act) {
+int setAlarm() {
+  //checking for initialization of limits, and that were actively limiting
+  if (limY != 0 && limH != 0 && active) {
+    if (setH > limH || setY > limY) { //compare values to limits
+      for(int i=0; i*5 <= limH; i++) {
+        alarm = i;
+      }
+    }
+    else {
+      alarm = 0;
+    }
+  }
+
+  //reset alarm timer if alarm is off
+  if (alarm == 0) {
+    alarmTimer = millis() + 2000;
+  } else if (millis() > alarmTimer) {
+    //check if alarm timer has expired
+
+    if (millis()-2000 < alarmTimer) {
+      //do this for additional 2 seconds
+      Toolkit.getDefaultToolkit().beep(); //call the windows alarm sound
+      delay(150);
+    }
+  }
+  if (alarm>0) println(alarm);
+  return alarm;
+}
+
+int getAlarm(int ht, int dis, int lht, int ldis, boolean act) {
   // checking for initialization of limits
   if (ht != 0 && dis != 0 && act) {
 
   }
-
   return alarm;
 }
 
@@ -130,7 +168,6 @@ class Button {
   int hB;
   String txB;
   boolean pressed;
-  boolean over;
 
   Button(color tempcB, int tempxB, int tempyB, int tempwB, int temphB, String temptxB) {
     cB = tempcB;
@@ -140,7 +177,6 @@ class Button {
     hB = temphB;
     txB = temptxB;
     pressed = false;
-    over = false;
   }
 
   void display() {
