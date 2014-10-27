@@ -31,6 +31,9 @@ String[] alarmImgs = {
   "big-gray-pause.png"
 };
 PImage[] alarms = new PImage[alarmImgs.length];
+// position of alarm graphics
+int almX = w - (169+dL);
+int almY = dL;
 
 boolean alarm = false;
 boolean active = true;
@@ -48,9 +51,9 @@ void setup() {
 
   video.start();
 
-  setButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Set Posture");
+  setButton = new Button(color(#69B2FD), bX, bY, bW, bH, "Set Posture");
   bX = bX+bW+(dL/2);
-  pauseButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Pause Tracking");
+  pauseButton = new Button(color(#69B2FD), bX, bY, bW, bH, "Pause Tracking");
 
   for (int i=0; i < alarmImgs.length; i++){
       alarms[i] = loadImage(alarmImgs[i]);
@@ -65,19 +68,19 @@ void draw() {
   pauseButton.display();
 
   if(setButton.pressed) {
+    // setButton.txB = limH > 0 ? "Reset Posture" : "Set Posture";
     limH = setH+10;
     delay(150);
     limY = setY+10;
+    active = true;
   }
   if(pauseButton.pressed) {
     if (active) {
       active = false;
       pauseButton.txB = "Resume Tracking";
-      noStroke();
     } else {
       active = true;
       pauseButton.txB = "Pause Tracking";
-      strokeWeight(2);
     }
   }
 }
@@ -116,7 +119,7 @@ void getPosition() {
     }
 
     //Draw a line at the limit height:
-    if (limH != 0) line(0, limH, width, limH);
+    if (limH != 0 && active) line(0, limH, width, limH);
 
   popMatrix();
 }
@@ -126,26 +129,23 @@ void handleAlarm() {
   if (limY != 0 && limH != 0 && active) {
     if (setH > limH || setY > limY) { //compare values to limits
       alarm = true;
-    }
-    else {
+      image(alarms[1],almX,almY);
+
+      // WHAT IS WRONG WITH THIS LOGIC?!? AGHHHH
+      if (millis()-secs < alarmTimer) {
+        image(alarms[2],almX,almY);
+      } else {
+        image(alarms[3],almX,almY);
+      }
+    } else {
       alarm = false;
+      // set the alarm for x seconds from now
+      alarmTimer = millis() + secs;
+      // display safe image
+      image(alarms[0],almX,almY);
     }
-  }
-
-  println(alarmTimer + ", " + millis());
-
-  //reset alarm timer if alarm is off
-  if (alarm == false) {
-    // set the alarm for x seconds from now
-    alarmTimer = millis() + secs*3;
-    // display safe image
-    image(alarms[0],0,0);
-  } else if (millis()-secs < alarmTimer) {
-    image(alarms[1],0,0);
-  } else if (millis()-secs*2 < alarmTimer) {
-    image(alarms[2],0,0);
   } else {
-    image(alarms[3],0,0);
+    image(alarms[5],almX,almY);
   }
 }
 
@@ -159,6 +159,9 @@ boolean mouseOver(int xpos, int ypos, int rwidth, int rheight){
       mouseY > ypos && mouseY < ypos+rheight) return true;
   else return false;
 }
+
+// pause button is having problems.
+
 
 class Button {
   color cB;
@@ -181,17 +184,21 @@ class Button {
 
   void display() {
     textSize(14);
+    // stroke(cB);
     fill(cB);
-    text(txB, (wB/2)+xB-((wB/2)/2), (hB/2)+yB+((hB/2)/2));
-
-    stroke(cB);
-    noFill();
     pressed = false;
 
     if(mousePressed && mouseOver(xB, yB, wB, hB)) {
-      fill(cB);
+      fill(cB-200);
       pressed = true;
     }
     rect(xB, yB, wB, hB);
+
+    fill(255);
+    text(txB, (wB/2)+xB-((wB/2)/2), (hB/2)+yB+((hB/2)/2));
+  }
+
+  void mouseReleased(){
+    if(mouseOver(xB, yB, wB, hB)) pressed = !pressed;
   }
 }
