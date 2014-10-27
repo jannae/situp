@@ -16,16 +16,26 @@ int limY = 0; // Y position limit from calibration
 int limH = 0; // Distance limit from calibration
 
 // Button things
-int dL = 10;
+int dL = 20;
 int bW = (w/2)-dL;
 int bH = 30;
 int bX = dL;
 int bY = h-bH-dL;
 
-color[] alarmCols = {#C8C8C8, #B4E123,#B4E123,#FFF028,#FFF028,#FFBE32,#FFBE32,#FF8A8A,#FF8A8A};
+String[] alarmImgs = {
+  "big-green.png",
+  "big-yellow.png",
+  "big-orange.png",
+  "big-red.png",
+  "big-gray-hello.png",
+  "big-gray-pause.png"
+};
+PImage[] alarms = new PImage[alarmImgs.length];
+
 boolean alarm = false;
 boolean active = true;
 int alarmTimer;
+int secs = 1500; // How long will we tolerate bad posture
 
 Button setButton;
 Button pauseButton;
@@ -41,11 +51,15 @@ void setup() {
   setButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Set Posture");
   bX = bX+bW+(dL/2);
   pauseButton = new Button(color(#FFFB7E), bX, bY, bW, bH, "Pause Tracking");
+
+  for (int i=0; i < alarmImgs.length; i++){
+      alarms[i] = loadImage(alarmImgs[i]);
+  }
 }
 
 void draw() {
   getPosition();
-  setAlarm();
+  handleAlarm();
 
   setButton.display();
   pauseButton.display();
@@ -59,9 +73,11 @@ void draw() {
     if (active) {
       active = false;
       pauseButton.txB = "Resume Tracking";
+      noStroke();
     } else {
       active = true;
       pauseButton.txB = "Pause Tracking";
+      strokeWeight(2);
     }
   }
 }
@@ -78,20 +94,6 @@ void getPosition() {
     image(video, 0, 0);
 
     noFill();
-
-    if (alarm) {
-      // We will increment the color alert after 2 seconds 8 times
-      int secs = 1500;
-      for (int i = 2; i < alarmCols.length; i++){
-        if( millis() - alarmTimer >= secs){
-          stroke(alarmCols[i]);
-        }
-        secs = secs+2000;
-      }
-    } else {
-      stroke(alarmCols[0]);
-    }
-    strokeWeight(2);
 
     Rectangle[] faces = opencv.detect();
 
@@ -119,7 +121,7 @@ void getPosition() {
   popMatrix();
 }
 
-void setAlarm() {
+void handleAlarm() {
   //checking for initialization of limits, and that were actively limiting
   if (limY != 0 && limH != 0 && active) {
     if (setH > limH || setY > limY) { //compare values to limits
@@ -130,18 +132,21 @@ void setAlarm() {
     }
   }
 
+  println(alarmTimer + ", " + millis());
+
   //reset alarm timer if alarm is off
   if (alarm == false) {
-    alarmTimer = millis() + 2000;
-  } else if (millis() > alarmTimer) {
-    //check for 2 more seconds if alarm timer has expired
-    if (millis()-2000 < alarmTimer) {
-      // make a noise
-      Toolkit.getDefaultToolkit().beep();
-      delay(150);
-    }
+    // set the alarm for x seconds from now
+    alarmTimer = millis() + secs*3;
+    // display safe image
+    image(alarms[0],0,0);
+  } else if (millis()-secs < alarmTimer) {
+    image(alarms[1],0,0);
+  } else if (millis()-secs*2 < alarmTimer) {
+    image(alarms[2],0,0);
+  } else {
+    image(alarms[3],0,0);
   }
-  // if (alarm) println(alarm);
 }
 
 void captureEvent(Capture c) {
