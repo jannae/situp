@@ -6,7 +6,7 @@ tmp/**
 node_modules/
 .sass-cache
 
-#### OSX Things
+#### Other OSX Things
 .AppleDouble
 .LSOverride
 
@@ -43,3 +43,44 @@ Temporary Items
 
 # sftp configuration file
 sftp-config.json
+
+#### Processing things
+applet
+application.linux32
+application.linux64
+application.windows32
+application.windows64
+application.macosx
+build-tmp
+
+#### C++ Things
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+
