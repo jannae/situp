@@ -1,4 +1,4 @@
-// Beginning with standard camera test face detection sketch for Processin / opencv
+// Beginning with standard camera test face detection sketch for Processing / opencv
 
 import gab.opencv.*;
 import processing.video.*;
